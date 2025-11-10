@@ -1,14 +1,14 @@
 # 🧮 Matrix Multiplication AI Accelerator in Verilog
 
 This project demonstrates a simple **Matrix Multiplication Accelerator** designed in **Verilog HDL**.  
-It performs multiplication of two 2x2 matrices using basic Verilog constructs and simulates the concept of how AI accelerators handle **matrix operations** — the building blocks of neural networks.
+It performs multiplication of two 4x4 matrices using basic Verilog constructs and simulates the concept of how AI accelerators handle **matrix operations** — the building blocks of neural networks.
 
 ---
 
 ## 🚀 Overview
 
 Matrix multiplication is one of the most common operations in **AI chips** and **deep learning accelerators**.  
-This project simulates that concept at a small scale by multiplying two 2x2 matrices using sequential logic in Verilog.
+This project simulates that concept at a small scale by multiplying two 4x4 matrices using sequential logic in Verilog.
 
 ---
 
@@ -39,7 +39,7 @@ This project automates this logic in Verilog hardware.
 
 ## ⚙️ Features
 
-✅ Performs **2x2 matrix multiplication**  
+✅ Performs **4x4 matrix multiplication**  
 ✅ Uses **sequential logic** with clock and reset  
 ✅ Displays results in simulation console  
 ✅ Designed and simulated using **Xilinx Vivado**  
@@ -52,26 +52,56 @@ This project automates this logic in Verilog hardware.
 ### 📘 Code
 
 ```verilog
-module matrix_multiplier(
-    input clk,
-    input rst,
-    input [7:0] A00, A01, A10, A11,   // Matrix A elements
-    input [7:0] B00, B01, B10, B11,   // Matrix B elements
-    output reg [15:0] C00, C01, C10, C11  // Result matrix C elements
+module matrix_multiplier (
+    input  wire clk,
+    input  wire [8*16-1:0] A_flat,  // 16 elements × 8 bits each
+    input  wire [8*16-1:0] B_flat,  // 16 elements × 8 bits each
+    output reg  [16*16-1:0] C_flat  // 16 elements × 16 bits each
 );
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            C00 <= 0; C01 <= 0;
-            C10 <= 0; C11 <= 0;
-        end else begin
-            // Matrix Multiplication Logic
-            C00 <= (A00 * B00) + (A01 * B10);
-            C01 <= (A00 * B01) + (A01 * B11);
-            C10 <= (A10 * B00) + (A11 * B10);
-            C11 <= (A10 * B01) + (A11 * B11);
+
+    integer i, j, k;
+    reg [7:0]  A [0:3][0:3];
+    reg [7:0]  B [0:3][0:3];
+    reg [15:0] C [0:3][0:3];
+    reg [15:0] temp;
+
+    // ------------------------------
+    // Unpack 1D input buses into 2D matrices
+    // ------------------------------
+    always @(*) begin
+        for (i = 0; i < 4; i = i + 1)
+            for (j = 0; j < 4; j = j + 1) begin
+                A[i][j] = A_flat[(i*4 + j)*8 +: 8];
+                B[i][j] = B_flat[(i*4 + j)*8 +: 8];
+            end
+    end
+
+    // ------------------------------
+    // Main matrix multiplication logic
+    // ------------------------------
+    always @(posedge clk) begin
+        for (i = 0; i < 4; i = i + 1) begin
+            for (j = 0; j < 4; j = j + 1) begin
+                temp = 0;
+                for (k = 0; k < 4; k = k + 1) begin
+                    temp = temp + (A[i][k] * B[k][j]);
+                end
+                C[i][j] <= temp;
+            end
         end
     end
+
+    // ------------------------------
+    // Pack 2D result back into flat output
+    // ------------------------------
+    always @(*) begin
+        for (i = 0; i < 4; i = i + 1)
+            for (j = 0; j < 4; j = j + 1)
+                C_flat[(i*4 + j)*16 +: 16] = C[i][j];
+    end
+
 endmodule
+
 ```
 
 ---
@@ -79,55 +109,65 @@ endmodule
 ## 🧪 Testbench: `tb_matrix_multiplier.v`
 
 ```verilog
-`timescale 1ns/1ps
-module tb_matrix_multiplier;
-    reg clk, rst;
-    reg [7:0] A00, A01, A10, A11;
-    reg [7:0] B00, B01, B10, B11;
-    wire [15:0] C00, C01, C10, C11;
 
+module tb_matrix_multiplier;
+
+    reg clk;
+    reg [8*16-1:0] A_flat;
+    reg [8*16-1:0] B_flat;
+    wire [16*16-1:0] C_flat;
+
+    integer i, j;
+
+    // Instantiate the top module
     matrix_multiplier uut (
         .clk(clk),
-        .rst(rst),
-        .A00(A00), .A01(A01), .A10(A10), .A11(A11),
-        .B00(B00), .B01(B01), .B10(B10), .B11(B11),
-        .C00(C00), .C01(C01), .C10(C10), .C11(C11)
+        .A_flat(A_flat),
+        .B_flat(B_flat),
+        .C_flat(C_flat)
     );
 
-    // Clock generation
-    always #5 clk = ~clk;
-
+    // Clock generation (10 ns period)
     initial begin
-        $display("=== Matrix Multiplication Accelerator Simulation ===");
         clk = 0;
-        rst = 1;
-        #10 rst = 0;
+        forever #5 clk = ~clk;
+    end
 
-        // Initialize Matrices
-        A00 = 1; A01 = 2;
-        A10 = 3; A11 = 4;
+    // Stimulus
+    initial begin
+        // Initialize matrices A and B (4x4)
+        // A matrix
+        A_flat[0*8 +: 8]  = 1;  A_flat[1*8 +: 8]  = 2;  A_flat[2*8 +: 8]  = 3;  A_flat[3*8 +: 8]  = 4;
+        A_flat[4*8 +: 8]  = 5;  A_flat[5*8 +: 8]  = 6;  A_flat[6*8 +: 8]  = 7;  A_flat[7*8 +: 8]  = 8;
+        A_flat[8*8 +: 8]  = 9;  A_flat[9*8 +: 8]  = 10; A_flat[10*8 +: 8] = 11; A_flat[11*8 +: 8] = 12;
+        A_flat[12*8 +: 8] = 13; A_flat[13*8 +: 8] = 14; A_flat[14*8 +: 8] = 15; A_flat[15*8 +: 8] = 16;
 
-        B00 = 5; B01 = 6;
-        B10 = 7; B11 = 8;
+        // B matrix
+        B_flat[0*8 +: 8]  = 1;  B_flat[1*8 +: 8]  = 2;  B_flat[2*8 +: 8]  = 3;  B_flat[3*8 +: 8]  = 4;
+        B_flat[4*8 +: 8]  = 5;  B_flat[5*8 +: 8]  = 6;  B_flat[6*8 +: 8]  = 7;  B_flat[7*8 +: 8]  = 8;
+        B_flat[8*8 +: 8]  = 9;  B_flat[9*8 +: 8]  = 10; B_flat[10*8 +: 8] = 11; B_flat[11*8 +: 8] = 12;
+        B_flat[12*8 +: 8] = 13; B_flat[13*8 +: 8] = 14; B_flat[14*8 +: 8] = 15; B_flat[15*8 +: 8] = 16;
 
-        #10;
-        $display("Matrix A:");
-        $display("[%d %d]", A00, A01);
-        $display("[%d %d]", A10, A11);
+        // Wait for computation
+        #20;
 
-        $display("Matrix B:");
-        $display("[%d %d]", B00, B01);
-        $display("[%d %d]", B10, B11);
-
-        #10;
-        $display("Result Matrix C = A x B:");
-        $display("[%d %d]", C00, C01);
-        $display("[%d %d]", C10, C11);
+        // Display output matrix C
+        $display("===============================================");
+        $display("Matrix Multiplication Accelerator Simulation");
+        $display("===============================================");
+        for (i = 0; i < 4; i = i + 1) begin
+            for (j = 0; j < 4; j = j + 1) begin
+                $write("%0d ", C_flat[(i*4 + j)*16 +: 16]);
+            end
+            $write("\n");
+        end
 
         #20;
         $finish;
     end
+
 endmodule
+
 ```
 
 ---
@@ -174,7 +214,6 @@ Matrix_Multiplication_Accelerator/
 
 ## 💡 Future Improvements
 
-- Expand to **4x4 or 8x8 matrices**
 - Add **MAC (Multiply-Accumulate) units** as submodules
 - Implement **pipelined or parallel processing**
 - Extend to **fixed-point or floating-point operations**
