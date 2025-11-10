@@ -2,7 +2,7 @@
 
 This project demonstrates a simple **Matrix Multiplication Accelerator** designed in **Verilog HDL**.  
 It performs multiplication of two 4x4 matrices using basic Verilog constructs and simulates the concept of how AI accelerators handle **matrix operations** — the building blocks of neural networks.
-
+ 
 ---
 
 ## 🚀 Overview
