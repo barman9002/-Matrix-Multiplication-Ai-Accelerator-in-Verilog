@@ -200,16 +200,23 @@ When simulated in **Vivado**, you’ll see output like this in the console:
 ```
 === Matrix Multiplication Accelerator Simulation ===
 Matrix A:
-[1 2]
-[3 4]
+[1  2  3  4]
+[5  6  7  8]
+[9  10 11 12]
+[13 14 15 16]
 
 Matrix B:
-[5 6]
-[7 8]
+[1  0  0  0]
+[0  1  0  0]
+[0  0  1  0]
+[0  0  0  1]
 
-Result Matrix C = A x B:
-[19 22]
-[43 50]
+Result Matrix C = A × B:
+[1  2  3  4]
+[5  6  7  8]
+[9 10 11 12]
+[13 14 15 16]
+
 ```
 
 ---
