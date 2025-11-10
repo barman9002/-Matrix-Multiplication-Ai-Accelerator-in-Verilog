@@ -185,8 +185,8 @@ Matrix_Multiplication_Accelerator/
 
 **Abhisekh Barman**  
 💻 Developer & AI Enthusiast  
-📧 [Email](mailto:abhisekhbarman@example.com)  
-🌐 [GitHub](https://github.com/yourusername)
+📧 [Email](mailto:abhisekhbarman688@gmail.com)  
+🌐 [GitHub](https://github.com/barman9002)
 
 ---
 
